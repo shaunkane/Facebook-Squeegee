@@ -14,9 +14,11 @@ import com.restfb.DefaultFacebookClient;
 import com.restfb.FacebookClient;
 import com.restfb.types.*;
 
+import utils.SaveImage;
+
 public class FacebookSqueegee {
 	private static String MY_ACCESS_TOKEN = 
-		"CAAGgjVYIpNMBAPT5nTTUJ2Vd1vPHbZCAZCy3V9vmRRL8EnfUEg1HxrdwkFbh6FyIWUPGVunQNQ1QD1SfUmvvYr7C3diNTQTJ01TcL7U3NxmgUmaWkh7SQXuLLGJJXOy0oOIa4ZCwjFnMAFCOZAKA0JlVO5BG3CxCEo0miPCsnQZDZD";
+		"CAACEdEose0cBADattyCX6PJ10QeKnMIvZC2XDZBRmywjjsE5anZB4UWLKPWLqGzMAZBjiWQCZCq0yvJAzbQibPjU2pkW01v2NolqgMJ6F5gUvP2sjGfVZBLviJZCvFFFQ6hVT0zLBGCdSxXLibaoV2NhxBCFi5JEXMfZA922EqIOzwZDZD";
 	private static String WARBY_PARKER_FB_PAGE = "warbyparker/tagged";
 	
 	// Output Variables
@@ -59,13 +61,9 @@ public class FacebookSqueegee {
 					System.out.println(tag.getLink());
 					record.append(tag.getFrom().getName() + " [" + tag.getFrom().getId() + "]\t");
 					
-					record.append(tag.getPicture() + "\t");
-					record.append(tag.getCaption() + "\t");
-					
+					record.append(squeegeePicture(facebookClient, tag));
 					record.append(squeegeeApp(facebookClient, tag));
-					
 					record.append(squeegeeLikes(facebookClient, tag));
-					
 					record.append(squeegeeComments(facebookClient, tag));
 					
 					try {
@@ -78,6 +76,19 @@ public class FacebookSqueegee {
 				}
 			}
 		}
+	}
+	private static StringBuilder squeegeePicture(FacebookClient facebookClient, Post post) {
+		StringBuilder pictureRecord = new StringBuilder("");
+		
+		pictureRecord.append(post.getPicture() + "\t");
+		pictureRecord.append(post.getCaption() + "\t");
+		
+		if(post.getPicture() != null) {
+			String imageLocal = "./images/" + post.getId() + ".jpg";
+			SaveImage.saveImageFromURL(post.getPicture(), imageLocal);
+		}
+		
+		return pictureRecord;
 	}
 	private static StringBuilder squeegeeComments(FacebookClient facebookClient, Post post) {
 		StringBuilder commentsRecord = new StringBuilder("");
