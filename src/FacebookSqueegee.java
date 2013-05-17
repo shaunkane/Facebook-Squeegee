@@ -1,4 +1,3 @@
-import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 
@@ -6,8 +5,6 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
-
-import javax.print.attribute.standard.DateTimeAtCompleted;
 
 import com.restfb.Connection;
 import com.restfb.DefaultFacebookClient;
@@ -18,8 +15,9 @@ import utils.SaveImage;
 
 public class FacebookSqueegee {
 	private static String MY_ACCESS_TOKEN = 
-		"CAACEdEose0cBADattyCX6PJ10QeKnMIvZC2XDZBRmywjjsE5anZB4UWLKPWLqGzMAZBjiWQCZCq0yvJAzbQibPjU2pkW01v2NolqgMJ6F5gUvP2sjGfVZBLviJZCvFFFQ6hVT0zLBGCdSxXLibaoV2NhxBCFi5JEXMfZA922EqIOzwZDZD";
-	private static String WARBY_PARKER_FB_PAGE = "warbyparker/tagged";
+		"CAACEdEose0cBAI7xOUc7AHZBivKRbGwvW6wrppgEOAacmTZBrf61Q2QvZC3yfZBZAJHrEZAvfFJO6b9GN99sINhN0iIYBvZCbYdX2kk1LVL1AiwDi8783BWRRKZA7RVh6KKlSQU7zJIEHBI0jZB8hHAYo9ZCI7O5prU6FracxA3bi97AZDZD";
+ 
+	private static String WARBY_PARKER_FB_PAGE = "warbyparker/feed";
 	
 	// Output Variables
 	private static DateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
