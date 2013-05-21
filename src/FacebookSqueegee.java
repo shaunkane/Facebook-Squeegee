@@ -15,36 +15,46 @@ import utils.SaveImage;
 
 public class FacebookSqueegee {
 	private static String MY_ACCESS_TOKEN = 
-		"CAACEdEose0cBAI7xOUc7AHZBivKRbGwvW6wrppgEOAacmTZBrf61Q2QvZC3yfZBZAJHrEZAvfFJO6b9GN99sINhN0iIYBvZCbYdX2kk1LVL1AiwDi8783BWRRKZA7RVh6KKlSQU7zJIEHBI0jZB8hHAYo9ZCI7O5prU6FracxA3bi97AZDZD";
- 
+		"CAACEdEose0cBAJChOuVZCNQWfEBOJx1iZC1L2b0g1gSHFZBtvhOwL7FCSPzNn79LHHyUvrG70EbSHOQxl1btQ3vAe62gYEJ2OixRLNJI1mpF7zD0YlFRHNaHBXyLLZBvc4ZBEkUCrSnM5OF3zPq7EZBiTuOIEW2pmWb2dqoVkZAawZDZD";
 	private static String WARBY_PARKER_FB_PAGE = "warbyparker/feed";
-	
-	// Output Variables
-	private static DateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
-	private static Date date = new Date();
-	private static String OUT_FILE_NAME = "./" + dateFormat.format(date).toString() + ".txt";
+	private static String WARBY_PARKER_FB_ID = "308998183837";
+	private static DateFormat ISO_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	private static Date DATE = new Date();
+	private static String OUT_MAIN_FILE_NAME = "./" + ISO_DATE_FORMAT.format(DATE).toString() + ".txt";
+	private static String WHITE_SPACE_STRIP = "[\t\n\r\f]";
 	
 	public static void main(String[] args) {
+		// App Start
+		System.out.println("Getting started at: " + ISO_DATE_FORMAT.format(DATE).toString());
+		
 		try {
 			// Sessions expire. Go here for fresh ones: https://developers.facebook.com/tools/access_token/
 			FacebookClient facebookClient = new DefaultFacebookClient(MY_ACCESS_TOKEN);
-			FileWriter fw = new FileWriter(OUT_FILE_NAME);
 			
-			// Pass it a stream input and output.
+			// The big dump file.
+			FileWriter fw = new FileWriter(OUT_MAIN_FILE_NAME);
+			
+			// Pass the squeegee a stream for input and output.
 			squeegee(facebookClient, fw);
 			
 			// All done!
 			fw.close();
 		} catch (IOException e) {
-			System.err.println("Couldn't create output file!");
+			System.err.println("Couldn't create output file(s)!");
 			e.printStackTrace();
 		}		
+		
+		// App End
+		Date end = new Date();
+		System.out.println("Wrapping up at: " + ISO_DATE_FORMAT.format(end).toString());
 	}
 	
 	private static void squeegee(FacebookClient facebookClient, FileWriter fw) {
 		StringBuilder record = new StringBuilder("");
 		
 		Connection<Post> tagFeed = facebookClient.fetchConnection(WARBY_PARKER_FB_PAGE, Post.class);
+		
+		int counter = 0;
 		
 		// Facebook limits the JSON to 25 hits per "page", so we need to hit them all.
 		for(List<Post> tagPage : tagFeed) {
@@ -53,78 +63,92 @@ public class FacebookSqueegee {
 				// Right now we're only going to pull for photos.
 				record = new StringBuilder("");
 				
+				// I should never get a null Post type.
 				if(tag.getType() != null) {
-					record.append(tag.getType() + " [" + tag.getId() + "]\t");
+					record.append(tag.getType() + "\t");
+					record.append(tag.getId() + "\t");
+					record.append(ISO_DATE_FORMAT.format(tag.getCreatedTime()).toString() + "\t");
+					record.append(tag.getFrom().getName() + "\t"); 
+					record.append(tag.getFrom().getId() + "\t");
 					
-					System.out.println(tag.getLink());
-					record.append(tag.getFrom().getName() + " [" + tag.getFrom().getId() + "]\t");
+					// Most of these aren't "required" in the Post type, 
+					// so I have to do some additional validation
+					// before I "get" the values or write a null.
+					// Hence the special methods.
+					record.append(squeegeePicture(tag) + "\t");
+					record.append(squeegeeCaption(tag) + "\t");
+					record.append(squeegeeMessage(tag) + "\t");
+					record.append(squeegeeApp(tag) + "\t");
+					record.append(squeegeeLikeCount(tag) + "\t");
+					record.append(squeegeeCommentCount(tag) + "\n");
 					
-					record.append(squeegeePicture(facebookClient, tag));
-					record.append(squeegeeApp(facebookClient, tag));
-					record.append(squeegeeLikes(facebookClient, tag));
-					record.append(squeegeeComments(facebookClient, tag));
+					// Just so I can follow along in the console.
+					System.out.println("[" + String.format("%05d", counter) + "]\t" 
+							+ tag.getType() + "\t" + tag.getId());
+					counter++;
+					
+					// Likes and comments are stored as separate records.
+					record.append(squeegeeLikes(tag));
+					record.append(squeegeeComments(tag));
 					
 					try {
-						fw.write(record.toString() + "\n");
-						fw.flush();
+						fw.write(record.toString());
+						fw.flush();						
 					} catch (IOException e) {
 						System.err.println("Couldn't write record! [" + tag.getId() + "]");
 						e.printStackTrace();
 					}
+				} else {
+					System.err.println("Null! [" + tag.getId() + "]");
 				}
 			}
 		}
 	}
-	private static StringBuilder squeegeePicture(FacebookClient facebookClient, Post post) {
+	private static StringBuilder squeegeePicture(Post post) {
 		StringBuilder pictureRecord = new StringBuilder("");
 		
-		pictureRecord.append(post.getPicture() + "\t");
-		pictureRecord.append(post.getCaption() + "\t");
-		
-		if(post.getPicture() != null) {
+		// This avoids all those annoying place-holder images.
+		if(post.getType().equalsIgnoreCase("photo") && post.getPicture() != null) {
 			String imageLocal = "./images/" + post.getId() + ".jpg";
-			SaveImage.saveImageFromURL(post.getPicture(), imageLocal);
+			
+			if(post.getSource() != null) {
+				pictureRecord.append(post.getSource());
+				
+				SaveImage.saveImageFromURL(post.getSource(), imageLocal);
+			} else {
+				pictureRecord.append(post.getPicture());
+				
+				SaveImage.saveImageFromURL(post.getPicture(), imageLocal);
+			}
+		} else {
+			pictureRecord.append("null");
 		}
 		
 		return pictureRecord;
 	}
-	private static StringBuilder squeegeeComments(FacebookClient facebookClient, Post post) {
-		StringBuilder commentsRecord = new StringBuilder("");
+	private static StringBuilder squeegeeCaption(Post post) {
+		StringBuilder captionRecord = new StringBuilder("");
 		
-		if(post.getComments() != null) {
-			commentsRecord.append(post.getComments().getData().size() + ";");
-			
-			commentsRecord.append("{");
-			for(Comment comment : post.getComments().getData()) {
-				commentsRecord.append(comment.getFrom().getName() + " [" + comment.getFrom().getId() + "] ");
-				commentsRecord.append(comment.getMessage() + " ");
-				
-				// I found Facebook API ugliness! I'll whip this out if they ever job interview me :P
-				if(comment.getLikeCount() > 0) {
-					Connection<Post> commentLikes =
-						facebookClient.fetchConnection(comment.getId() + "/likes", Post.class);
-					StringBuilder commentLikesRecord = new StringBuilder("[" + comment.getLikeCount() + "];");
-					
-					commentsRecord.append("{");
-					for(NamedFacebookType commentLike : commentLikes.getData()) {
-						commentLikesRecord.append(commentLike.getName() + " [" + commentLike.getId() + "]");
-						commentLikesRecord.append(";");
-					}
-					commentsRecord.append("}");
-				} else {
-					commentsRecord.append("0;{}");
-				}
-				
-				commentsRecord.append(";");
-			}
-			commentsRecord.append("}");
+		if(post.getCaption() != null) {
+			captionRecord.append(post.getCaption().replaceAll(WHITE_SPACE_STRIP, " "));
 		} else {
-			commentsRecord.append("0;{}");
+			captionRecord.append("null");
 		}
 		
-		return commentsRecord;
+		return captionRecord;
 	}
-	private static StringBuilder squeegeeApp(FacebookClient facebookClient, Post post) {
+	private static StringBuilder squeegeeMessage(Post post) {
+		StringBuilder messageRecord = new StringBuilder("");
+		
+		if(post.getMessage() != null) {
+			messageRecord.append(post.getMessage().replaceAll(WHITE_SPACE_STRIP, " "));
+		} else {
+			messageRecord.append("null");
+		}
+		
+		return messageRecord;
+	}	
+	private static StringBuilder squeegeeApp(Post post) {
 		StringBuilder appRecord = new StringBuilder("");
 		
 		if(post.getApplication() != null) {
@@ -132,25 +156,82 @@ public class FacebookSqueegee {
 		} else {
 			appRecord.append("null");
 		}
-		
+
 		return appRecord;
 	}
-	private static StringBuilder squeegeeLikes(FacebookClient facebookClient, Post post) {
+	private static StringBuilder squeegeeLikeCount(Post post) {
+		StringBuilder likeCountRecord = new StringBuilder("");
+		
+		if(post.getLikes() != null) {
+			likeCountRecord.append(post.getLikesCount());	
+		} else {
+			likeCountRecord.append("0");
+		}
+		
+		return likeCountRecord;
+	}
+	private static StringBuilder squeegeeCommentCount(Post post) {
+		StringBuilder commentCountRecord = new StringBuilder("");
+		
+		if(post.getComments() != null) {
+			commentCountRecord.append(post.getComments().getData().size());	
+		} else {
+			commentCountRecord.append("0");
+		}
+		
+		return commentCountRecord;
+	}
+	private static StringBuilder squeegeeLikes(Post post) {
+		// Likes are like records just with a lot less information, so we start a new "row".
 		StringBuilder likesRecord = new StringBuilder("");
 		
 		if(post.getLikes() != null) {
-			likesRecord.append(post.getLikesCount() + ";");
-			
-			likesRecord.append("{");
 			for(NamedFacebookType like : post.getLikes().getData()) {
-				likesRecord.append(like.getName() + " [" + like.getId() + "]");
-				likesRecord.append(";");
+				likesRecord.append("like" + "\t");
+				likesRecord.append(post.getId() + "\t");
+				likesRecord.append("null" + "\t");
+				likesRecord.append(like.getName() + "\t");
+				likesRecord.append(like.getId() + "\t");
+				
+				likesRecord.append("null" + "\t");
+				likesRecord.append("null" + "\t");
+				likesRecord.append("null" + "\t");
+				likesRecord.append("null" + "\t");
+				likesRecord.append("0" + "\t");
+				likesRecord.append("0" + "\n");
+				
+				// Likes can't have comments or likes.
 			}
-			likesRecord.append("}");
-		} else {
-			likesRecord.append("0;{}");
 		}
 		
 		return likesRecord;
+	}
+ 	private static StringBuilder squeegeeComments(Post post) {
+		StringBuilder commentsRecord = new StringBuilder("");
+		
+		if(post.getComments() != null) {
+			for(Comment comment : post.getComments().getData()) {
+				commentsRecord.append("comment" + "\t");
+				commentsRecord.append(post.getId() + "\t");
+				commentsRecord.append(ISO_DATE_FORMAT.format(comment.getCreatedTime()) + "\t");
+				commentsRecord.append(comment.getFrom().getName() + "\t");
+				commentsRecord.append(comment.getFrom().getId() + "\t");
+				commentsRecord.append("null" + "\t");
+				commentsRecord.append("null" + "\t");
+				if(comment.getMessage() != null) {
+					commentsRecord.append(comment.getMessage().replaceAll(WHITE_SPACE_STRIP, " ") + "\t");	
+				} else {
+					commentsRecord.append("null" + "\t");
+				}
+				commentsRecord.append("null" + "\t");
+				commentsRecord.append(comment.getLikeCount() + "\t");
+				commentsRecord.append("0" + "\n");
+				
+				// Comments are not threaded.
+				// The Facebook API does not expose deeper info on comment likes... Lame.
+			}
+		}
+			
+		return commentsRecord;
 	}
 }
