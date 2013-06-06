@@ -15,8 +15,8 @@ import utils.SaveImage;
 
 public class FacebookSqueegee {
 	private static String MY_ACCESS_TOKEN = 
-		"CAACEdEose0cBAJChOuVZCNQWfEBOJx1iZC1L2b0g1gSHFZBtvhOwL7FCSPzNn79LHHyUvrG70EbSHOQxl1btQ3vAe62gYEJ2OixRLNJI1mpF7zD0YlFRHNaHBXyLLZBvc4ZBEkUCrSnM5OF3zPq7EZBiTuOIEW2pmWb2dqoVkZAawZDZD";
-	private static String WARBY_PARKER_FB_PAGE = "warbyparker/feed";
+		"CAACEdEose0cBAEbvbSIQZAXeuOAOLiwrZAgb4lT0rD6B11nPEWQr7eehKc3gZCxW2CuMRR0bhZCAOePQCD6zSxbNQt15aeavxzNjd2Pi3qYnZCjHeHZCIqEerUmrGwWzQfZCHyzZAKKMbvNbQZBESG7tiSkNid6QZAIKcncopiZBfrZCPwZDZD";
+	private static String WARBY_PARKER_FB_PAGE = "warbyparker/tagged";
 	private static String WARBY_PARKER_FB_ID = "308998183837";
 	private static DateFormat ISO_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	private static Date DATE = new Date();
